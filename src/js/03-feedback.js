@@ -1,40 +1,47 @@
 import throttle from 'lodash.throttle';
 
-const form = document.querySelector('.feedback-form');
-const emailInput = form.querySelector('input[name="email"]');
-const messageInput = form.querySelector('textarea[name="message"]');
+const form = document.querySelector('form.feedback-form');
+const emailInput = form.querySelector('label [name="email"]');
+const messageInput = form.querySelector('label [name="message"]');
 
-// Load form state from local storage
-const savedState = JSON.parse(localStorage.getItem('feedback-form-state')) || {};
+const STORAGE_KEY = 'feedback-form-state';
 
-// Fill form fields with saved state
-emailInput.value = savedState.email || '';
-messageInput.value = savedState.message || '';
+function onPageReload() {
+    const savedMessage = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (savedMessage) {
+        emailInput.value = savedMessage.email;
+        messageInput.value = savedMessage.message;
+    }
+}
 
-// Track input event on the form and save field values to local storage
-const saveFormState = throttle(() => {
-    const state = {
-        email: emailInput.value,
-        message: messageInput.value
+onPageReload();
+
+function onFormInput() {
+    const email = emailInput.value
+    const message = messageInput.value;
+
+    const formData = {
+        email,
+        message,
     };
-    localStorage.setItem('feedback-form-state', JSON.stringify(state));
-}, 500);
 
-form.addEventListener('input', saveFormState);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+}
 
-// Submit event handler
-form.addEventListener('submit', event => {
-    event.preventDefault();
+form.addEventListener('input', throttle(onFormInput, 500));
 
-    // Clear local storage and form fields
-    localStorage.removeItem('feedback-form-state');
-    emailInput.value = '';
-    messageInput.value = '';
+function onFormSubmit(e) {
+    e.preventDefault(); //prevents the page reload when form is submitted
+    const email = emailInput.value;
+    const message = messageInput.value;
 
-    // Display form state in console
-    console.log('Form state:', {
-        email: savedState.email || '',
-        message: savedState.message || ''
-    });
-});
+    if (email == "" || message == "") {
+        alert('Enter both inputs');
+        form.reset();
+        return;
+    }
+    form.reset();
+    localStorage.removeItem(STORAGE_KEY);
+}
 
+form.addEventListener('submit', onFormSubmit);
